@@ -147,7 +147,7 @@ class regular_task:
                 self.print_msg('平均cpu温度 : ' + temp_color(round(avg / cnt, 2)), 0)
                 self.print_msg(warning + '§rcpu单核心最高温度' + ' : ' + temp_color(temp['coretemp'][0][1]) + 
                 ' ' + rtext_cmd('§e[▷]§r', '点击获得更多资讯', '!!temp show') + 
-                ' ' + rtext_cmd('§c[restart]§r', '重启服务器', '!!temp restart'), 0)
+                ' ' + rtext_cmd('§c[重启]§r', '重启服务器', '!!temp restart'), 0)
                 self.cmd_server.say(rtext_cmd('§6====点击重启服务器====§r', '点击重启服务器', '!!temp restart'))
                 self.cmd_server.say(rtext_cmd('§e====点击获取更多资讯====§r', '点击获取资讯详情', '!!temp show'))
                 if num == 0:
