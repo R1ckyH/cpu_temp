@@ -1,6 +1,6 @@
 # cpu_temp
 -----
-[English](https://github.com/rickyhoho/cpu_temp)
+[English](https://github.com/rickyhoho/cpu_temp/blob/master/README.md)
 
 一个 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 定时检测cpu温度的插件
 
