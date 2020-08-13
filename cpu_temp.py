@@ -24,6 +24,7 @@ high_degree = 70
 medium_degree = 50
 #others
 restart_countdown = 10
+#don't touch
 stop_restart = 0
 task_start = 0
 warn_start = 0

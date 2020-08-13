@@ -10,7 +10,7 @@ from utils.rtext import *
 def rtext_cmd(txt, msg, cmd):
     return RText(txt).h(msg).c(RAction.run_command, cmd)
 
-#interval time
+#循环时间
 t_hours = 0
 t_minutes = 2
 t_seconds = 0
@@ -18,12 +18,13 @@ warn_hours = 0
 warn_minutes = 0
 warn_seconds = 30
 show_freq = 15
-#degrees
+#预警温度
 warning_degree = 90
 high_degree = 70
 medium_degree = 50
-#others
+#其他
 restart_countdown = 10
+#不要动
 stop_restart = 0
 task_start = 0
 warn_start = 0
