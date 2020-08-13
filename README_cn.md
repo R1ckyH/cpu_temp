@@ -2,6 +2,8 @@
 -----
 [English](https://github.com/rickyhoho/cpu_temp/blob/master/README.md)
 
+**仅限linux使用**
+
 一个 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 定时检测cpu温度的插件
 
 你需要安装python模块 `daytime`, `psutil` 和 `apscheduler` 去使用cpu_temp
