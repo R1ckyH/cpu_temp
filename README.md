@@ -17,4 +17,4 @@ Type `!!temp` or `!!temperature` to use this plugin
 
 `warn_hours`, `warn_minutes`, `warn_seconds` is the warning loop interval time
 
-`show_freq` is the frequency that the plugin print log after run regular loop for `show_freq` times
+`show_freq` is the frequency that the plugin print log after run regular loop for `show_freq` times(recommand don't change it)
