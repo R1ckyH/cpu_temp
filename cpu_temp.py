@@ -164,8 +164,8 @@ class regular_task:
                     else:
                         count = count + 1
                 elif warn_start == 1:
-                    self.cmd_server.say('Average cpu temperature : ' + temp_color(round(avg / cnt, 2)))
-                    self.cmd_server.say('The highest core temperature' + ' : ' + temp_color(temp['coretemp'][0][1]))
+                    self.print_msg('Average cpu temperature : ' + temp_color(round(avg / cnt, 2)), 0)
+                    self.print_msg('The highest core temperature' + ' : ' + temp_color(temp['coretemp'][0][1], 0))
                     self.warning_temp_stop()
         elif num == 1:
             self.print_msg('Average cpu temperature : ' + temp_color(round(avg / cnt, 2)), num, info)
