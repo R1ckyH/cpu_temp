@@ -2,7 +2,7 @@
 -----
 A plugin for [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) to check cpu temp regularly
 
-You have to install python module `daytime` and `psutil` and `apscheduler` to use the full function of simple_test
+You have to install python module `daytime`, `psutil` and `apscheduler` to use the full function of simple_test
 
 You can execute `pip install daytime psutil apscheduler` to install it
 
