@@ -15,8 +15,8 @@ t_hours = 0
 t_minutes = 2
 t_seconds = 0
 warn_hours = 0
-warn_minutes = 0
-warn_seconds = 30
+warn_minutes = 1
+warn_seconds = 0
 show_freq = 15
 #预警温度
 warning_degree = 90
