@@ -1,5 +1,7 @@
 # cpu_temp
 -----
+[中文](https://github.com/rickyhoho/cpu_temp/blob/master/README_cn.md)
+
 A plugin for [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) to check cpu temp regularly
 
 You have to install python module `daytime`, `psutil` and `apscheduler` to use cpu_temp
