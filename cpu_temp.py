@@ -15,8 +15,8 @@ t_hours = 0
 t_minutes = 2
 t_seconds = 0
 warn_hours = 0
-warn_minutes = 1
-warn_seconds = 0
+warn_minutes = 0
+warn_seconds = 30
 show_freq = 15
 #degrees
 warning_degree = 90
@@ -233,21 +233,27 @@ def onServerInfo(server, info):
             if args[1] == 'show':
                 task.cal_temp(1, info)
             elif args[1] == 'restart':
-                if permission_check(server, info) > 2:
-                    restart_server(server)
-                else:
+                if permission_check(server, info) < 2:
                     error_msg(server, info, 1)
+                    return 0
+                restart_server(server)
             elif args[1] == 'stoprestart':
                 global stop_restart
                 stop_restart = 1
                 task.print_msg(systemreturn + 'The restart have been stop', 0)
             elif args[1] == 'stop':
+                if permission_check(server, info) < 2:
+                    error_msg(server, info, 1)
+                    return 0
                 if task_start == 0:
                     server.reply(info, error + 'The cycle have been already stoped')
                 else:
                     task.stop()
                     server.say(systemreturn + 'The cycle have been stoped')
             elif args[1] == 'start':
+                if permission_check(server, info) < 2:
+                    error_msg(server, info, 1)
+                    return 0
                 if task_start == 0:
                     task.cal_temp()
                     task.open_sche()

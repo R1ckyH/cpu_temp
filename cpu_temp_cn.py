@@ -233,21 +233,27 @@ def onServerInfo(server, info):
             if args[1] == 'show':
                 task.cal_temp(1, info)
             elif args[1] == 'restart':
-                if permission_check(server, info) > 2:
-                    restart_server(server)
-                else:
+                if permission_check(server, info) < 2:
                     error_msg(server, info, 1)
+                    return 0
+                restart_server(server)
             elif args[1] == 'stoprestart':
                 global stop_restart
                 stop_restart = 1
                 task.print_msg(systemreturn + '重启已经被中止', 0)
             elif args[1] == 'stop':
+                if permission_check(server, info) < 2:
+                    error_msg(server, info, 1)
+                    return 0
                 if task_start == 0:
-                    server.reply(info, error + '循环早就停止了！')
+                        server.reply(info, error + '循环早就停止了！')
                 else:
                     task.stop()
                     server.say(systemreturn + '循环已经停止')
             elif args[1] == 'start':
+                if permission_check(server, info) < 2:
+                    error_msg(server, info, 1)
+                    return 0
                 if task_start == 0:
                     task.cal_temp()
                     task.open_sche()
