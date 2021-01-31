@@ -1,39 +1,81 @@
 # -*- coding: utf-8 -*-
 import psutil
-import copy
-import daytime
 import time
+from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
-from utils.rtext import *
+from apscheduler.triggers.interval import IntervalTrigger
+from mcdreforged.api.types import *
+from mcdreforged.api.command import *
+from mcdreforged.api.rtext import *
+from mcdreforged.api.decorator import new_thread
+
+
+PLUGIN_METADATA = {
+    'id': 'cpu_temp',
+    'version': '2.5.1-cn',
+    'name': 'cpu_temp_cn',
+    'description': '服务器温度警报插件.',
+    'author': 'ricky',
+    'link': 'https://github.com/rickyhoho/cpu_temp',
+    'dependencies': {
+        'mcdreforged': '>=1.0.0'
+    }
+}
+
+
+permission = {
+    "help" : 1,
+    "show" : 1,
+    "start" : 2,
+    "stop" : 2,
+    "restart" : 2,
+    "stoprestart" : 1,
+}
 
 
 def rtext_cmd(txt, msg, cmd):
     return RText(txt).h(msg).c(RAction.run_command, cmd)
 
+
+#是否循环
+temp_loop = True
 #循环时间
 t_hours = 0
 t_minutes = 2
 t_seconds = 0
+show_freq = 15#显示频率 0 为马上
+#警告的循环时间
 warn_hours = 0
 warn_minutes = 1
 warn_seconds = 0
-show_freq = 15
 #预警温度
 warning_degree = 90
 high_degree = 70
 medium_degree = 50
-#其他
+#重启倒计时
 restart_countdown = 10
 #不要动
-stop_restart = 0
-task_start = 0
-warn_start = 0
+restarting = False
+task_start = False
+warn_start = False
+show_msg = True
 count = 0
+norm_trigger  = IntervalTrigger(
+                hours = t_hours,
+                minutes = t_minutes,
+                seconds = t_seconds
+)
+warn_trigger = IntervalTrigger(
+                hours = warn_hours,
+                minutes = warn_minutes,
+                seconds = warn_seconds,
+)
 
 plugin = 'cpu_temp'
 prefix = '!!temperature'
 prefix1 = '!!temp'
 
+timenow = 0
 systemreturn = '''§b[§rcpu_temp§b] §r'''
 warning = systemreturn + '''§cWarning: '''
 error = systemreturn + '''§cError: '''
@@ -42,31 +84,57 @@ error_permission = error + '你没有权限使用此指令'
 error_unknown_command = error + '''未知指令§r
 Type ''' +  rtext_cmd('§7!!temp help§r', '帮助页面', '!!temp help') + ''' 获取更多资讯'''
 help = '''§b-----------§fcpu_temp§b-----------§r
-''' + rtext_cmd('!!temperature / !!temp', '显示帮助信息', '!!temp') + ''' §a显示帮助信息§r
-''' + rtext_cmd('!!temperature show', '显示温度详情', '!!temp show') + ''' §a显示cpu温度的详情§r
-''' + rtext_cmd('!!temperature start', '启动预警循环', '!!temp start') + ''' §a启动温度预警循环§r
-''' + rtext_cmd('!!temperature stop', '停止预警循环', '!!temp stop') + ''' §a停止温度预警循环§r
-''' + rtext_cmd('!!temperature restart', '重启', '!!temp restart') +  ''' §a重启服务器§r
-''' + rtext_cmd('!!temperature stoprestart', '中止重启', '!!temp stoprestart') +  ''' §a中止重启服务器§r
+''' + rtext_cmd('!!temperature / !!temp §a显示帮助信息§r', '显示帮助信息', prefix1) + '''
+''' + rtext_cmd('!!temperature show §a显示cpu温度的详情§r', '显示温度详情', '!!temp show') + '''
+''' + rtext_cmd('!!temperature start §a启动温度预警循环§r', '启动预警循环', '!!temp start') + '''
+''' + rtext_cmd('!!temperature stop §a停止温度预警循环§r', '停止预警循环', '!!temp stop') + '''
+''' + rtext_cmd('!!temperature restart §a重启服务器§r', '重启', '!!temp restart') +  '''
+''' + rtext_cmd('!!temperature stoprestart §a中止重启服务器§r', '中止重启', '!!temp stoprestart') +  '''
 §b-----------------------------------§r'''  
 
 
+def out_log(msg : str):
+    msg = msg.replace('§r', '').replace('§d', '').replace('§c', '').replace('§6', '').replace('§e', '').replace('§a', '')
+    with open('logs/cpu_temp.log', 'a+') as log:
+        log.write(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + msg + '\n')
+    print("[server] " + datetime.now().strftime("[%H:%M:%S]") + ' [cpu_temp] ' + msg)
+
+
+def print_msg(msg, num, info: Info = None, src : CommandSource = None, server : ServerInterface = None):
+    if src != None:
+        server = src.get_server()
+        info = src.get_info()
+    if num == 0:
+        server.say(msg)
+        out_log(msg)
+    elif num == 1:
+        server.reply(info, msg)
+        out_log(msg)
+
+
 class regular_task:
-    def __init__(self, server):
+    def __init__(self, server : ServerInterface):
         self.cmd_server = server
-    
+
 
     def warning_temp(self):
         global warn_start
-        warn_start = 1
+        warn_start = True
         self.task.remove_job('loop')
+        self.add_task(1)
+    
+
+    def add_task(self, num):
+        if num == 0:
+            use_trigger = norm_trigger
+            loop_id = 'loop'
+        else:
+            use_trigger = warn_trigger
+            loop_id = 'warn_loop'
         self.task.add_job(
-            self.run_warn,
-            'interval',
-            hours = warn_hours,
-            minutes = warn_minutes, 
-            seconds = warn_seconds,
-            id = 'warn_loop',
+            self.cal_temp,
+            trigger = use_trigger,
+            id = loop_id,
             replace_existing = True
         )
 
@@ -78,53 +146,34 @@ class regular_task:
     def warning_temp_stop(self):
         global warn_start
         self.task.remove_job('warn_loop')
-        warn_start = 0
-        self.task.add_job(
-            self.cal_temp,
-            'interval',
-            hours = t_hours,
-            minutes = t_minutes,
-            seconds = t_seconds,
-            id = 'loop',
-            replace_existing = True
-           )
+        warn_start = False
+        self.add_task(0)
 
 
     def open_sche(self):
-        global count, task_start
-        task_start = 1
+        global count
         count = 0
         self.task = BackgroundScheduler()
-        self.task.add_job(
-            self.cal_temp,
-            'interval',
-            hours = t_hours,
-            minutes = t_minutes,
-            seconds = t_seconds,
-            id = 'loop',
-            replace_existing = True
-           )
+        self.add_task(0)
         self.start_on()
 
 
     def start_on(self):
+        global task_start
+        task_start = True
         self.task.start()
 
 
-    def print_msg(self, msg, num, info = None):
-        if num == 0:
-            self.cmd_server.say(msg)
-            self.cmd_server.logger.info(msg)
-        elif num == 1:
-            self.cmd_server.reply(info, msg)
-            self.cmd_server.logger.info(msg)
-
-
-    def cal_temp(self, num = 0, info = None):
-        temp = psutil.sensors_temperatures()
+    def avg_temp(self, num, temp, src : CommandSource = None):
+        global timenow, show_msg
         packet = 0
         cnt = 0
         avg = 0
+        if int(datetime.now().strftime("%Y%m%d%H%M%S")) - timenow > 60:
+            show_msg = True
+            timenow = int(datetime.now().strftime("%Y%m%d%H%M%S"))
+        else:
+            show_msg = False
         for i in range(0, len(temp['coretemp'])):
             if temp['coretemp'][i][0].startswith('Package id'):
                 if packet == 0:
@@ -132,155 +181,196 @@ class regular_task:
                 else:
                     break
             if num == 1:
-                self.print_msg(temp['coretemp'][i][0] + ' : ' + temp_color(temp['coretemp'][i][1]), num, info)
+                if show_msg:
+                    print_msg(temp['coretemp'][i][0] + ' : ' + temp_color(temp['coretemp'][i][1]), num, src)
+                else:
+                    src.reply(temp['coretemp'][i][0] + ' : ' + temp_color(temp['coretemp'][i][1]))
             avg = avg + temp['coretemp'][i][1]
             cnt = cnt + 1
-        if num == 0 or num == 3:
-            global count
-            #t = time.localtime()
-            #current_time = time.strftime("%H:%M:%S", t)
-            #print(current_time)
-            #print('count' + str(count) + ' ' + temp_color(round(avg / cnt, 2)) + ' ' + str(temp['coretemp'][0][1]))
-            if temp['coretemp'][0][1] > warning_degree:
-                if warn_start == 0:
-                    self.warning_temp()
-                self.print_msg('平均cpu温度 : ' + temp_color(round(avg / cnt, 2)), 0)
-                self.print_msg(warning + '§rcpu单核心最高温度' + ' : ' + temp_color(temp['coretemp'][0][1]) + 
-                ' ' + rtext_cmd('§e[▷]§r', '点击获得更多资讯', '!!temp show') + 
-                ' ' + rtext_cmd('§c[重启]§r', '重启服务器', '!!temp restart'), 0)
-                self.cmd_server.say(rtext_cmd('§6====点击重启服务器====§r', '点击重启服务器', '!!temp restart'))
-                self.cmd_server.say(rtext_cmd('§e====点击获取更多资讯====§r', '点击获取资讯详情', '!!temp show'))
-                if num == 0:
-                    if count >= show_freq:
-                        count = 0
-                    else:
-                        count = count + 1
+        return avg / cnt
+
+
+    def cal_temp(self, num = 0, src : CommandSource = None):
+        global count
+        temp = psutil.sensors_temperatures()
+        avg_temp = self.avg_temp(num, temp, src)
+        temp_msg = '平均cpu温度 : ' + temp_color(round(avg_temp, 2))
+        high_temp_msg = 'cpu单核心最高温度' + ' : ' + temp_color(temp['coretemp'][0][1])
+        if num == 0:
+            if count >= show_freq:
+                out_log(temp_msg)
+                out_log(high_temp_msg)
+                count = 0
             else:
-                if num == 0:
-                    if count >= show_freq:
-                        self.cmd_server.logger.info('平均cpu温度 : ' + temp_color(round(avg / cnt, 2)))
-                        self.cmd_server.logger.info('cpu单核心最高温度' + ' : ' + temp_color(temp['coretemp'][0][1]))
-                        count = 0
-                    else:
-                        count = count + 1
-                elif warn_start == 1:
-                    self.print_msg('平均cpu温度 : ' + temp_color(round(avg / cnt, 2)), 0)
-                    self.print_msg('cpu单核心最高温度' + ' : ' + temp_color(temp['coretemp'][0][1]), 0)
+                count = count + 1
+        elif num != 3:
+            if show_msg:
+                print_msg(temp_msg, 1, src = src)
+                print_msg(high_temp_msg, 1, src = src)
+            else:
+                src.reply(temp_msg)
+                src.reply(high_temp_msg)
+        if num == 0 or num == 3:
+            if temp['coretemp'][0][1] > warning_degree:
+                if not warn_start:
+                    self.warning_temp()
+                print_msg(
+                    temp_msg + '\n' +
+                    warning + high_temp_msg +
+                    rtext_cmd(' §e[▷]§r', '点击获得更多资讯', '!!temp show') +
+                    rtext_cmd('§c [重启]§r', '重启服务器', '!!temp restart') +
+                    '\n' + rtext_cmd('§6====点击重启服务器====§r', '点击重启服务器', '!!temp restart') +
+                    '\n' + rtext_cmd('§e====点击获取更多资讯====§r', '点击获取资讯详情', '!!temp show'),
+                    0, src = src, server = self.cmd_server
+                )
+            else:
+                if warn_start:
+                    print_msg(temp_msg, 0, src = src, server = self.cmd_server)
+                    print_msg(high_temp_msg, 0, src = src, server = self.cmd_server)
                     self.warning_temp_stop()
-        elif num == 1:
-            self.print_msg('平均cpu温度 : ' + temp_color(round(avg / cnt, 2)), num, info)
-        elif num == 2:
-            self.print_msg('平均cpu温度 : ' + temp_color(round(avg / cnt, 2)), 1, info)
-            self.print_msg('cpu单核心最高温度' + ' : ' + temp_color(temp['coretemp'][0][1]), 1, info)
 
 
     def stop(self):
         global task_start
-        task_start = 0
-        #self.task.print_jobs()
+        task_start = False
         self.task.remove_all_jobs()
         self.task.shutdown()
         self.cmd_server.logger.info(systemreturn + '循环停止')
 
 
-def permission_check(server, info):
-    if info.isPlayer:
-        return server.get_permission_level(info.player)
-    else:
-        return 999
-
-
 def temp_color(temperatre):
+    tmp = str(temperatre) + '§d°C§r'
     if temperatre > warning_degree:
-        return '§c' + str(temperatre) + '§d°C§r'
+        return '§c' + tmp
     elif temperatre > high_degree:
-        return '§6' + str(temperatre) + '§d°C§r'
+        return '§6' + tmp
     elif temperatre > medium_degree:
-        return '§e' + str(temperatre) + '§d°C§r'
+        return '§e' + tmp
     else:
-        return '§a' + str(temperatre) + '§d°C§r'
+        return '§a' + tmp
 
 
-def error_msg(server, info, num):
-    if num == 0:
-        server.tell(info.player, error_used)
-    elif num == 1:
-        server.tell(info.player, error_permission)
-    elif num == 2:
-        server.tell(info.player, error_unknown_command)
-
-
-def restart_server(server):
-    global stop_restart
-    stop_restart = 0
+@new_thread('restart')
+def restart_server(src : CommandSource):
+    global restarting
+    server = src.get_server()
+    if restarting:
+        print_msg(error + '正在重启中', 0, src = src)
+        return
+    restarting = True
     for i in range(0, restart_countdown):
         server.logger.info(systemreturn + '服务器会在' + str(restart_countdown - i) +  '秒后重启')
         server.say(systemreturn + '服务器会在' + str(restart_countdown - i) +  '秒后重启 ' + rtext_cmd('§c[X]', '§cClick to stop restart', '!!temp stoprestart'))
         time.sleep(1)
-        if stop_restart == 1:
+        if not restarting:
             return
+    restarting = False
     server.restart()
 
 
-def onServerInfo(server, info):
-    global task_start
-    if info.content.startswith('!!temp') or info.content.startswith('!!temperature'):
-        args = info.content.split(' ')
-        if len(args) == 1 or args[1] == 'help':
-            server.reply(info, help)
-            task.cal_temp(2, info)
-        elif len(args) == 2:
-            if args[1] == 'show':
-                task.cal_temp(1, info)
-            elif args[1] == 'restart':
-                if permission_check(server, info) < 2:
-                    error_msg(server, info, 1)
-                    return 0
-                restart_server(server)
-            elif args[1] == 'stoprestart':
-                global stop_restart
-                stop_restart = 1
-                task.print_msg(systemreturn + '重启已经被中止', 0)
-            elif args[1] == 'stop':
-                if permission_check(server, info) < 2:
-                    error_msg(server, info, 1)
-                    return 0
-                if task_start == 0:
-                        server.reply(info, error + '循环早就停止了！')
-                else:
-                    task.stop()
-                    server.say(systemreturn + '循环已经停止')
-            elif args[1] == 'start':
-                if permission_check(server, info) < 2:
-                    error_msg(server, info, 1)
-                    return 0
-                if task_start == 0:
-                    task.cal_temp()
-                    task.open_sche()
-                    task.print_msg(systemreturn + '循环开始了', 1, info)
-                else:
-                    error_msg(server, info, 0)
-            else:
-                error_msg(server, info, 2)
-        else:
-            error_msg(server, info, 2)
+@new_thread('task_process')
+def stop_restart(src : CommandSource):
+    global restarting
+    if restarting:
+        print_msg(systemreturn + '重启已经被中止', 0, src = src)
+        restarting = False
+    else:
+        print_msg(error + '重启早已被中止了', 0, src = src)
 
 
-def on_load(server, old):
-    server.add_help_message('!!temp','服务器温度警报插件.')
-    global task, task_start
-    task = regular_task(server)
-    task.open_sche()
-    
+def permission_check(src : CommandSource, cmd):
+    if src.get_permission_level() >= permission[cmd]:
+        return True
+    else:
+        return False
 
-def on_unload(server):
-    global task_start
-    if task_start == 1:
+
+@new_thread('task_process')
+def help_msg(src : CommandSource):
+    global task
+    src.reply(help)
+    task.cal_temp(2, src = src)
+
+
+@new_thread('task_process')
+def start_task(src : CommandSource):
+    if not task_start:
+        task.cal_temp(src = src)
+        task.open_sche()
+        print_msg(systemreturn + '循环开始了', 1, info = src.get_info(), src = src)
+    else:
+        print_msg(error + '循环早就开始了', 1, info = src.get_info(), src = src)  
+
+
+@new_thread('task_process')
+def stop_task(src : CommandSource):
+    if not task_start:
+        src.reply(error + '循环早就停止了！')
+    else:
         task.stop()
-        task_start = 0
+        src.get_server().say(systemreturn + '循环已经停止')
 
 
-def on_info(server, info):
-    info2 = copy.deepcopy(info)
-    info2.isPlayer = info2.is_player
-    onServerInfo(server, info2) 
+def register_command(server : ServerInterface, prefix_use):
+    server.register_command(
+        Literal(prefix_use).
+        runs(help_msg).
+        on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True).
+        then(
+            Literal('help').
+            requires(lambda src : permission_check(src, 'help')).
+            runs(help_msg).
+            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
+            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+        ).then(
+            Literal('show').
+            requires(lambda src : permission_check(src, 'show')).
+            runs(lambda src : task.cal_temp(1, src = src)).
+            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
+            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+        ).then(
+            Literal('restart').
+            requires(lambda src : permission_check(src, 'restart')).
+            runs(restart_server).
+            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
+            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+        ).then(
+            Literal('stoprestart').
+            requires(lambda src : permission_check(src, 'stoprestart')).
+            runs(stop_restart).
+            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
+            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+        ).then(
+            Literal('start').
+            requires(lambda src : permission_check(src, 'start')).
+            runs(lambda src : start_task(src)).
+            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
+            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+        ).then(
+            Literal('stop').
+            requires(lambda src : permission_check(src, 'stop')).
+            runs(lambda src : stop_task(src)).
+            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
+            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+        )
+    )
+
+
+def on_load(server : ServerInterface, old):
+    global task
+    if old is not None:
+        if old.task_start:
+            old.task.stop()
+    server.register_help_message('!!temp','服务器温度警报插件.')
+    task = regular_task(server)
+    if temp_loop:
+        task.open_sche()
+    register_command(server, prefix)
+    register_command(server, prefix1)
+
+
+def on_unload(server : ServerInterface):
+    global task_start
+    if task_start:
+        task.stop()
+        task_start = False
