@@ -6,7 +6,7 @@
 
 一个 [MCDReforged1.x](https://github.com/Fallen-Breath/MCDReforged) 定时检测cpu温度的插件
 
-你需要安装python模块 `daytime`, `psutil` 和 `apscheduler` 去使用cpu_temp
+你需要安装python模块<strong> `daytime`, `psutil` 和 `apscheduler`</strong> 去使用cpu_temp
 
 你可以运行指令 `pip install daytime psutil apscheduler` 去安装所需要的python模块
 
@@ -17,8 +17,14 @@
 # 函数用法
 -----
 
+`temp_loop` 是否自动开启检测
+
 `t_hours`, `t_minutes`, `t_seconds` 是定期检测的时间间隔
 
 `warn_hours`, `warn_minutes`, `warn_seconds` 是警报运行间隔
 
 `show_freq` 是服务器间隔检测而输出log的次数(建议不要改)
+
+`warning_degree`, `high_degree`, `medium_degree` 是警报温度和高温颜色的设置
+
+`restart_countdown` 是重启倒计时
