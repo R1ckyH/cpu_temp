@@ -12,8 +12,8 @@ from mcdreforged.api.decorator import new_thread
 
 PLUGIN_METADATA = {
     'id': 'cpu_temp',
-    'version': '2.5.1-cn',
-    'name': 'cpu_temp_cn',
+    'version': '2.5.1',
+    'name': 'cpu_temp',
     'description': '服务器温度警报插件.',
     'author': 'ricky',
     'link': 'https://github.com/rickyhoho/cpu_temp',
