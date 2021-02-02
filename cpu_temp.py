@@ -10,9 +10,10 @@ from mcdreforged.api.rtext import *
 from mcdreforged.api.decorator import new_thread
 
 
+
 PLUGIN_METADATA = {
     'id': 'cpu_temp',
-    'version': '2.5.1',
+    'version': '2.5.2',
     'name': 'cpu_temp',
     'description': '服务器温度警报插件.',
     'author': 'ricky',
@@ -182,7 +183,7 @@ class regular_task:
                     break
             if num == 1:
                 if show_msg:
-                    print_msg(temp['coretemp'][i][0] + ' : ' + temp_color(temp['coretemp'][i][1]), num, src)
+                    print_msg(temp['coretemp'][i][0] + ' : ' + temp_color(temp['coretemp'][i][1]), num, src = src)
                 else:
                     src.reply(temp['coretemp'][i][0] + ' : ' + temp_color(temp['coretemp'][i][1]))
             avg = avg + temp['coretemp'][i][1]
@@ -325,7 +326,7 @@ def register_command(server : ServerInterface, prefix_use):
         ).then(
             Literal('show').
             requires(lambda src : permission_check(src, 'show')).
-            runs(lambda src : task.cal_temp(1, src = src)).
+            runs(lambda src : task.cal_temp(1, src)).
             on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
             on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
         ).then(
