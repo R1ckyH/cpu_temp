@@ -15,7 +15,7 @@ PLUGIN_METADATA = {
     'id': 'cpu_temp',
     'version': '2.5.2',
     'name': 'cpu_temp',
-    'description': '服务器温度警报插件.',
+    'description': 'A plugin to check cpu temp regularly.',
     'author': 'ricky',
     'link': 'https://github.com/rickyhoho/cpu_temp',
     'dependencies': {
