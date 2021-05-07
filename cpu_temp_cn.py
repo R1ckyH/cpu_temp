@@ -18,7 +18,7 @@ PLUGIN_METADATA = {
     'author': 'ricky',
     'link': 'https://github.com/rickyhoho/cpu_temp',
     'dependencies': {
-        'mcdreforged': '>=1.0.0'
+        'mcdreforged': '>=1.3.0'
     }
 }
 
@@ -311,47 +311,34 @@ def stop_task(src : CommandSource):
         src.get_server().say(systemreturn + '循环已经停止')
 
 
+def fox_literal(msg):
+    return Literal(msg).requires(lambda src : permission_check(src, msg))
+
+
 def register_command(server : ServerInterface, prefix_use):
     server.register_command(
         Literal(prefix_use).
         runs(help_msg).
-        on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True).
+        on_child_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
+        on_child_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True).
         then(
-            Literal('help').
-            requires(lambda src : permission_check(src, 'help')).
-            runs(help_msg).
-            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
-            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+            fox_literal('help').
+            runs(help_msg)
         ).then(
-            Literal('show').
-            requires(lambda src : permission_check(src, 'show')).
-            runs(lambda src : task.cal_temp(1, src)).
-            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
-            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+            fox_literal('show').
+            runs(lambda src : task.cal_temp(1, src))
         ).then(
-            Literal('restart').
-            requires(lambda src : permission_check(src, 'restart')).
-            runs(restart_server).
-            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
-            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+            fox_literal('restart').
+            runs(restart_server)
         ).then(
-            Literal('stoprestart').
-            requires(lambda src : permission_check(src, 'stoprestart')).
-            runs(stop_restart).
-            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
-            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+            fox_literal('stoprestart').
+            runs(stop_restart)
         ).then(
-            Literal('start').
-            requires(lambda src : permission_check(src, 'start')).
-            runs(lambda src : start_task(src)).
-            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
-            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+            fox_literal('start').
+            runs(lambda src : start_task(src))
         ).then(
-            Literal('stop').
-            requires(lambda src : permission_check(src, 'stop')).
-            runs(lambda src : stop_task(src)).
-            on_error(RequirementNotMet, lambda src : src.reply(error_permission), handled = True).
-            on_error(UnknownArgument, lambda src : src.reply(error_unknown_command), handled = True)
+            fox_literal('stop').
+            runs(lambda src : stop_task(src))
         )
     )
 
