@@ -12,7 +12,7 @@ from mcdreforged.api.decorator import new_thread
 
 PLUGIN_METADATA = {
     'id': 'cpu_temp',
-    'version': '2.5.2',
+    'version': '2.6.1',
     'name': 'cpu_temp',
     'description': 'A plugin to check cpu temp regularly.',
     'author': 'ricky',
@@ -174,6 +174,17 @@ class regular_task:
             timenow = int(datetime.now().strftime("%Y%m%d%H%M%S"))
         else:
             show_msg = False
+        if 'k10temp' in temp:
+            for i in range(0, len(temp['k10temp'])):
+                if num == 1:
+                    if show_msg:
+                        print_msg(temp['k10temp'][i][0] + ' : ' + temp_color(temp['k10temp'][i][1]), num, src = src)
+                    else:
+                        src.reply(temp['k10temp'][i][0] + ' : ' + temp_color(temp['k10temp'][i][1]))
+                avg = avg + temp['k10temp'][i][1]
+                cnt = cnt + 1
+            return avg / cnt
+
         for i in range(0, len(temp['coretemp'])):
             if temp['coretemp'][i][0].startswith('Package id'):
                 if packet == 0:
@@ -195,7 +206,11 @@ class regular_task:
         temp = psutil.sensors_temperatures()
         avg_temp = self.avg_temp(num, temp, src)
         temp_msg = 'Average cpu temperature : ' + temp_color(round(avg_temp, 2))
-        high_temp_msg = 'The highest core temperature' + ' : ' + temp_color(temp['coretemp'][0][1])
+        if 'k10temp' in temp:
+            tempe = temp['k10temp'][0][1]
+        else:
+            tempe = temp['coretemp'][0][1]
+        high_temp_msg = 'The highest core temperature' + ' : ' + temp_color(tempe)
         if num == 0:
             if count >= show_freq:
                 out_log(temp_msg)
@@ -211,7 +226,11 @@ class regular_task:
                 src.reply(temp_msg)
                 src.reply(high_temp_msg)
         if num == 0 or num == 3:
-            if temp['coretemp'][0][1] > warning_degree:
+            if 'k10temp' in temp:
+                tempe = temp['k10temp'][0][1]
+            else:
+                tempe = temp['coretemp'][0][1]
+            if tempe > warning_degree:
                 if not warn_start:
                     self.warning_temp()
                 print_msg(
