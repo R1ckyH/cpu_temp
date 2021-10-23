@@ -1,6 +1,6 @@
 # cpu_temp
 -----
-[English](https://github.com/rickyhoho/cpu_temp/blob/master/README.md)
+[English](https://github.com/R1ckyH/cpu_temp/blob/master/README.md)
 
 **仅限linux使用**
 
