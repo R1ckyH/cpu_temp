@@ -16,7 +16,7 @@ PLUGIN_METADATA = {
     'name': 'cpu_temp',
     'description': 'A plugin to check cpu temp regularly.',
     'author': 'ricky',
-    'link': 'https://github.com/rickyhoho/cpu_temp',
+    'link': 'https://github.com/R1ckyH/cpu_temp',
     'dependencies': {
         'mcdreforged': '>=1.3.0'
     }
