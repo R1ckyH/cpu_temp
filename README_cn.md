@@ -4,7 +4,7 @@
 
 **仅限linux使用**
 
-一个 [MCDReforged1.x](https://github.com/Fallen-Breath/MCDReforged) 定时检测cpu温度的插件
+一个 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 定时检测cpu温度的插件
 
 你需要安装python模块<strong> `daytime`, `psutil` 和 `apscheduler`</strong> 去使用cpu_temp
 
@@ -16,6 +16,7 @@
 
 # 函数用法
 -----
+修改`.mcdr`里面的东西 **(不建议)**
 
 `temp_loop` 是否自动开启检测
 

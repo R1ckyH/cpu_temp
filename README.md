@@ -4,7 +4,7 @@
 
 **For linux only**
 
-A plugin for [MCDReforged1.x](https://github.com/Fallen-Breath/MCDReforged) to check cpu temp regularly
+A plugin for [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) to check cpu temp regularly
 
 You have to install python module <strong>`daytime`, `psutil` and `apscheduler`</strong> to use cpu_temp
 
@@ -14,8 +14,9 @@ Type `!!temp` or `!!temperature` to use this plugin
 
 `!!temp restart` need helper or more permission to use
 
-# varible useage
+# variable usage
 -----
+edit the variable inside `.mcdr` **(not recommend)**
 
 `temp_loop` is loop start when load or not
 
