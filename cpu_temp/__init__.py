@@ -37,14 +37,14 @@ def stop_restart(src: InfoCommandSource):
 
 @new_thread("task_process")
 def help_msg(src: InfoCommandSource):
-    help_info = '''§b-----------§fChatBridgeReforged_Client§b-----------§r
+    help_info = '''§b--------------------§fcpu_temp§b--------------------§r
 ''' + help_formatter(PREFIX, 'help', tr("help"), tr("help")) + '''
 ''' + help_formatter(PREFIX, 'show', tr("show"), tr("show")) + '''
 ''' + help_formatter(PREFIX, 'start', tr("start"), tr("start")) + '''
 ''' + help_formatter(PREFIX, 'stop', tr("stop"), tr("stop")) + '''
 ''' + help_formatter(PREFIX, 'restart', tr("restart"), tr("restart")) + '''
 ''' + help_formatter(PREFIX, 'stoprestart', tr("stop_restart"), tr("stop_restart")) + '''
-§b-----------------------------------------------§r'''
+§b------------------------------------------------§r'''
     src.reply(help_info)
     task.cal_temp(2, src=src)
 
